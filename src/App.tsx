@@ -4,6 +4,8 @@ import Hud from './components/ui/Hud';
 import CinematicEntry from './components/ui/CinematicEntry';
 import SceneBoundary from './components/ui/SceneBoundary';
 import Joystick from './components/ui/Joystick';
+import AdminPanel from './components/ui/AdminPanel';
+import ProjectsOverlay from './components/ui/ProjectsOverlay';
 import { useCityStore } from './store/cityStore';
 import { supportsWebGL } from './lib/webgl';
 import { profile } from './data/profile';
@@ -39,6 +41,8 @@ export default function App() {
       </SceneBoundary>
       {entered && activeView ? <Hud /> : null}
       {entered && activeView ? <Joystick /> : null}
+      {entered ? <AdminPanel /> : null}
+      <ProjectsOverlay />
       <CinematicEntry />
     </div>
   );
@@ -64,9 +68,11 @@ function NoWebGL() {
             </li>
           ))}
         </ul>
-        <p>
-          Contact: <a href={'mailto:' + profile.email}>{profile.email}</a>
-        </p>
+        {profile.socials.map((social) => (
+          <p key={social.url}>
+            <a href={social.url} target="_blank" rel="noreferrer noopener">{social.label}</a>
+          </p>
+        ))}
       </div>
     </div>
   );
