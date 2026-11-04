@@ -5,8 +5,21 @@ import Character from './Character';
 import { playerInput, playerState } from '../../lib/player';
 import { useCityStore } from '../../store/cityStore';
 
-const SPEED = 3.6;
+const CITY_SPEED = 3.6;
+const OFFICE_SPEED = 2.4;
 const TURN_RATE = 10;
+const UP = new THREE.Vector3(0, 1, 0);
+
+const BOUNDS = {
+  city: { x: 70, z: 70 },
+  office: { x: 12.1, z: 7.9 },
+};
+
+// Both spawn spots face into the space so the first step never walks into a wall.
+const SPAWN = {
+  city: { x: 0, z: 18, yaw: Math.PI },
+  office: { x: 0, z: 7.1, yaw: Math.PI },
+};
 
 export default function Player() {
   const group = useRef<THREE.Group>(null);
@@ -17,7 +30,7 @@ export default function Player() {
   const forward = useRef(new THREE.Vector3());
   const right = useRef(new THREE.Vector3());
   const move = useRef(new THREE.Vector3());
-  const up = new THREE.Vector3(0, 1, 0);
+  const view = useCityStore((state) => state.activeView);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -34,6 +47,26 @@ export default function Player() {
     };
   }, []);
 
+  // Switching between the city and the office moves the character to the matching spawn.
+  useEffect(() => {
+    const spawn = SPAWN[view];
+    const node = group.current;
+    if (node) {
+      node.position.set(spawn.x, 0, spawn.z);
+      node.rotation.y = spawn.yaw;
+    }
+    playerState.x = spawn.x;
+    playerState.z = spawn.z;
+    playerState.yaw = spawn.yaw;
+    playerState.walking = false;
+    stride.current.d = 0;
+    if (view === 'office') {
+      // Reveal the interior, then hand the camera back to the walk as soon as a stick moves.
+      playerState.active = false;
+      useCityStore.getState().moveCamera([spawn.x + 4.4, 2.5, spawn.z + 5.4], [spawn.x, 1.25, spawn.z]);
+    }
+  }, [view]);
+
   useFrame((_, delta) => {
     const node = group.current;
     if (!node) return;
@@ -45,6 +78,9 @@ export default function Player() {
     let iy = playerInput.y + keyboardY;
     const magnitude = Math.hypot(ix, iy);
     const walking = magnitude > 0.12;
+    const indoor = view === 'office';
+    const bounds = indoor ? BOUNDS.office : BOUNDS.city;
+    const speed = indoor ? OFFICE_SPEED : CITY_SPEED;
 
     if (walking) {
       ix /= Math.max(1, magnitude);
@@ -54,7 +90,7 @@ export default function Player() {
       forward.current.y = 0;
       if (forward.current.lengthSq() < 0.0001) forward.current.set(0, 0, -1);
       forward.current.normalize();
-      right.current.crossVectors(forward.current, up).normalize();
+      right.current.crossVectors(forward.current, UP).normalize();
 
       move.current
         .copy(forward.current)
@@ -62,11 +98,9 @@ export default function Player() {
         .addScaledVector(right.current, ix)
         .normalize();
 
-      const step = SPEED * delta;
-      node.position.x += move.current.x * step;
-      node.position.z += move.current.z * step;
-      node.position.x = THREE.MathUtils.clamp(node.position.x, -70, 70);
-      node.position.z = THREE.MathUtils.clamp(node.position.z, -70, 70);
+      const step = speed * delta;
+      node.position.x = THREE.MathUtils.clamp(node.position.x + move.current.x * step, -bounds.x, bounds.x);
+      node.position.z = THREE.MathUtils.clamp(node.position.z + move.current.z * step, -bounds.z, bounds.z);
       stride.current.d += step;
 
       const targetYaw = Math.atan2(move.current.x, move.current.z);
@@ -76,17 +110,12 @@ export default function Player() {
       node.rotation.y += diff * Math.min(1, delta * TURN_RATE);
 
       playerState.yaw = node.rotation.y;
+      playerState.active = true;
     }
 
     playerState.x = node.position.x;
     playerState.z = node.position.z;
     playerState.walking = walking;
-
-    if (walking && !playerState.active) {
-      playerState.active = true;
-      const { x, z } = node.position;
-      useCityStore.getState().moveCamera([x + 8, 5.4, z + 10], [x, 1.2, z]);
-    }
 
     setPose((current) => {
       const next = walking ? 'walk' : 'idle';
@@ -96,7 +125,7 @@ export default function Player() {
 
   return (
     <group ref={group} position={[playerState.x, 0, playerState.z]} rotation={[0, playerState.yaw, 0]}>
-      <Character pose={pose} shirt="#2f6fd0" trousers="#27313f" distanceRef={stride.current} speed={SPEED} />
+      <Character pose={pose} shirt="#2f6fd0" trousers="#27313f" distanceRef={stride.current} speed={3.6} />
     </group>
   );
 }
