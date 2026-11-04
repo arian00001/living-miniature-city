@@ -4,6 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useCityStore } from '../../store/cityStore';
 import { cineShots } from '../../data/cineShots';
+import { playerState } from '../../lib/player';
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const smooth = (t: number) => t * t * (3 - 2 * t);
@@ -119,6 +120,7 @@ export default function CameraRig() {
 
     if (request && request.key !== handledCamera.current) {
       handledCamera.current = request.key;
+      playerState.active = false;
       start(
         new THREE.Vector3(request.position[0], request.position[1], request.position[2]),
         new THREE.Vector3(request.target[0], request.target[1], request.target[2]),
@@ -132,6 +134,19 @@ export default function CameraRig() {
       const distance = Math.min(180, Math.max(6, offset.length()));
       offset.setLength(distance);
       start(center.clone().add(offset), center);
+    }
+
+    // Once the visitor starts walking, the orbit target rides along with the character so
+    // the whole city stays draggable while following the walk.
+    if (playerState.active && !flight.current && useCityStore.getState().activeView === 'city') {
+      const k = Math.min(1, delta * 3.4);
+      const shiftX = (playerState.x - ctrl.target.x) * k;
+      const shiftZ = (playerState.z - ctrl.target.z) * k;
+      camera.position.x += shiftX;
+      camera.position.z += shiftZ;
+      ctrl.target.x += shiftX;
+      ctrl.target.z += shiftZ;
+      ctrl.update();
     }
 
     const activeFlight = flight.current;
