@@ -38,7 +38,7 @@ export default function Lab() {
         </group>
       ))}
       <Plant position={[-12.4, 0, 1.5]} scale={0.85} />
-      <Plant position={[-3.9, 0, -6.9]} scale={0.75} tone="#356e31" />
+      <Plant position={[-3.4, 0, -7.65]} scale={0.75} tone="#356e31" />
     </group>
   );
 }
