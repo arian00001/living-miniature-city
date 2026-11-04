@@ -21,7 +21,8 @@ interface FitProps {
 }
 
 // The downloaded models arrive in wildly different units and orientations, so every
-// instance is rescaled to a metric size and dropped exactly on the ground plane.
+// instance is rescaled to a metric size, turned so its long axis faces forward and
+// dropped exactly on the ground plane. Without the turn a car drives sideways.
 function FittedObject({ url, size, axis, castShadow }: FitProps) {
   const { scene } = useGLTF(url);
 
@@ -35,10 +36,15 @@ function FittedObject({ url, size, axis, castShadow }: FitProps) {
       }
     });
 
-    const bounds = new THREE.Box3().setFromObject(cloned);
-    const dims = bounds.getSize(new THREE.Vector3());
+    const box = new THREE.Box3().setFromObject(cloned);
+    const dims = box.getSize(new THREE.Vector3());
     const base = axis === 'height' ? dims.y : Math.max(dims.x, dims.z, dims.y);
-    if (base > 0.0001) cloned.scale.setScalar(size / base);
+    if (base > 0.0001) cloned.scale.multiplyScalar(size / base);
+
+    if (axis === 'length') {
+      const scaled = new THREE.Box3().setFromObject(cloned).getSize(new THREE.Vector3());
+      if (scaled.x > scaled.z * 1.02) cloned.rotation.y = Math.PI / 2;
+    }
 
     const fitted = new THREE.Box3().setFromObject(cloned);
     const center = fitted.getCenter(new THREE.Vector3());
