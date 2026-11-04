@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { buildingById, cameraFor } from '../data/buildings';
 import { floorY } from '../data/office';
 import type { CameraPreset, LightingMode, Panel, WeatherMode } from '../types';
+import { dhakaMinutes } from '../lib/sun';
 
 export interface CameraRequest {
   position: [number, number, number];
@@ -28,8 +29,16 @@ function nextKey() {
   return keyCounter;
 }
 
-// The simulated clock keeps its own fractional cursor so the UI only re-renders on whole minutes.
-let minuteCursor = 9 * 60;
+// The clock is anchored to the visitor's real Asia/Dhaka time and keeps its own
+// fractional cursor so the UI only re-renders on whole minutes.
+const START_MINUTES = Math.round(dhakaMinutes()) % 1440;
+let minuteCursor = START_MINUTES;
+
+function modeFor(minutes: number): LightingMode {
+  if (minutes >= 360 && minutes < 1020) return 'day';
+  if (minutes >= 1020 && minutes < 1170) return 'sunset';
+  return 'night';
+}
 
 export interface CityStore {
   ready: boolean;
@@ -78,13 +87,13 @@ export const useCityStore = create<CityStore>((set, get) => ({
   selectedFloor: 1,
   preset: 'city',
   panel: null,
-  lightingMode: 'day',
+  lightingMode: modeFor(START_MINUTES),
   weather: 'clear',
   soundEnabled: false,
   volume: 0.5,
   simulationEnabled: true,
   simulationSpeed: 1,
-  minutes: 9 * 60,
+  minutes: START_MINUTES,
   cameraRequest: null,
   zoomRequest: null,
 
@@ -143,7 +152,12 @@ export const useCityStore = create<CityStore>((set, get) => ({
 
   zoom: (factor) => set({ zoomRequest: { factor, key: nextKey() } }),
 
-  setLighting: (mode) => set({ lightingMode: mode }),
+  // Jumping a preset only moves the clock; the sky keeps following real time.
+  setLighting: (mode) => {
+    const target = mode === 'day' ? 12 * 60 : mode === 'sunset' ? 18 * 60 + 15 : 22 * 60;
+    minuteCursor = target;
+    set({ lightingMode: mode, minutes: target, simulationEnabled: true });
+  },
 
   cycleLighting: () => {
     const order: LightingMode[] = ['day', 'sunset', 'night'];
@@ -164,8 +178,8 @@ export const useCityStore = create<CityStore>((set, get) => ({
   tick: (delta) => {
     const state = get();
     if (!state.simulationEnabled) return;
-    minuteCursor = (minuteCursor + delta * 2 * state.simulationSpeed) % 1440;
+    minuteCursor = (minuteCursor + (delta / 60) * state.simulationSpeed) % 1440;
     const whole = Math.floor(minuteCursor);
-    if (whole !== Math.floor(state.minutes)) set({ minutes: whole });
+    if (whole !== state.minutes) set({ minutes: whole, lightingMode: modeFor(whole) });
   },
 }));
