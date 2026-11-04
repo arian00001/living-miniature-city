@@ -231,11 +231,18 @@ export default function Headquarters() {
         <meshStandardMaterial color="#e4f1f6" roughness={0.06} metalness={0.3} transparent opacity={0.4} />
       </mesh>
 
-      {/* parapet band and signage */}
-      <mesh position={[0, 3.86, 0]}>
-        <boxGeometry args={[27.9, 0.2, 19]} />
-        <meshStandardMaterial color={TRIM} roughness={0.7} />
-      </mesh>
+      {/* open parapet: no roof slab, so the office interior stays visible from every angle */}
+      {[
+        { key: 'pz-', position: [0, 4.05, -9.3] as [number, number, number], size: [27.9, 0.55, 0.22] as [number, number, number] },
+        { key: 'pz+', position: [0, 4.05, 9.3] as [number, number, number], size: [27.9, 0.55, 0.22] as [number, number, number] },
+        { key: 'px-', position: [-13.9, 4.05, 0] as [number, number, number], size: [0.22, 0.55, 19] as [number, number, number] },
+        { key: 'px+', position: [13.9, 4.05, 0] as [number, number, number], size: [0.22, 0.55, 19] as [number, number, number] },
+      ].map((wall) => (
+        <mesh key={wall.key} position={wall.position} castShadow receiveShadow>
+          <boxGeometry args={wall.size} />
+          <meshStandardMaterial color={TRIM} roughness={0.7} />
+        </mesh>
+      ))}
       <Sign text="DevStyle Tech" sub="Innovate · Create · Grow" position={[0, 3.3, 9.2]} width={6.6} height={1.2} />
 
       {/* freestanding board on the lawn */}
