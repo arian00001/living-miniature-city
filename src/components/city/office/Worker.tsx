@@ -1,6 +1,8 @@
 import Character from '../Character';
 import type { HairStyle } from '../Character';
 
+export type WorkerPose = 'type' | 'sit' | 'talk' | 'idle';
+
 interface WorkerProps {
   position: [number, number, number];
   rotation?: number;
@@ -8,6 +10,7 @@ interface WorkerProps {
   skin?: string;
   hair?: string;
   hairStyle?: HairStyle;
+  pose?: WorkerPose;
   typing?: boolean;
 }
 
@@ -18,12 +21,13 @@ export default function Worker({
   skin = '#d8a87c',
   hair = '#241d18',
   hairStyle = 'short',
+  pose,
   typing = true,
 }: WorkerProps) {
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       <Character
-        pose={typing ? 'type' : 'sit'}
+        pose={pose ?? (typing ? 'type' : 'sit')}
         shirt={shirt}
         skin={skin}
         hair={hair}
