@@ -2,80 +2,111 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useCityStore } from '../../store/cityStore';
-import type { LightingMode } from '../../types';
+import { celestial, skyPalette } from '../../lib/sun';
+import { skyState } from '../../lib/skyState';
 
-const PRESETS: Record<LightingMode, { ambient: number; hemi: number; sun: number; sunColor: string; bg: string; fog: string; sunPosition: [number, number, number] }> = {
-  day: { ambient: 0.55, hemi: 0.55, sun: 2.1, sunColor: '#fff4d9', bg: '#bdd8f2', fog: '#c9dff2', sunPosition: [62, 92, 44] },
-  sunset: { ambient: 0.42, hemi: 0.34, sun: 1.7, sunColor: '#ffb173', bg: '#f0b98f', fog: '#eec2a1', sunPosition: [-74, 32, 34] },
-  night: { ambient: 0.17, hemi: 0.14, sun: 0.3, sunColor: '#93b2ff', bg: '#060c17', fog: '#0a1424', sunPosition: [-42, 58, -28] },
-};
-
+// Sun, moon, sky tint and fog are all derived from the real Asia/Dhaka clock.
 export default function Lighting() {
   const scene = useThree((state) => state.scene);
-  const mode = useCityStore((state) => state.lightingMode);
-  const rain = useCityStore((state) => state.weather) === 'rain';
+  const gl = useThree((state) => state.gl);
+  const sun = useRef<THREE.DirectionalLight>(null);
+  const moon = useRef<THREE.DirectionalLight>(null);
   const ambient = useRef<THREE.AmbientLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
-  const sun = useRef<THREE.DirectionalLight>(null);
-  const target = useMemo(() => PRESETS[mode], [mode]);
+  const rain = useCityStore((state) => state.weather) === 'rain';
 
-  const colors = useRef({
-    bg: new THREE.Color(PRESETS.day.bg),
-    fog: new THREE.Color(PRESETS.day.fog),
-    sun: new THREE.Color(PRESETS.day.sunColor),
-  });
+  const cache = useMemo(() => ({
+    sunColor: new THREE.Color('#fff9ea'),
+    moonlight: new THREE.Color('#9db5e6'),
+    hemiSky: new THREE.Color('#dce9f4'),
+    hemiGround: new THREE.Color('#8b9581'),
+    fog: new THREE.Color('#cdddea'),
+    temp: new THREE.Color(),
+    sunPos: new THREE.Vector3(0, 60, 20),
+    moonPos: new THREE.Vector3(0, -60, -20),
+  }), []);
 
   useEffect(() => {
-    scene.background = colors.current.bg;
-    scene.fog = new THREE.Fog(PRESETS.day.fog, 120, 340);
+    scene.fog = new THREE.Fog('#cdddea', 110, 520);
+    scene.background = null;
     return () => {
       scene.fog = null;
     };
   }, [scene]);
 
   useFrame((_, delta) => {
-    const k = Math.min(1, delta * 2.4);
-    const dim = rain ? 0.78 : 1;
+    const minutes = useCityStore.getState().minutes;
+    const reading = celestial(minutes);
+    skyState.minutes = reading.minutes;
+    skyState.elevation = reading.elevation;
+    skyState.night = reading.night;
+    skyState.sunDir.set(reading.sunDir[0], reading.sunDir[1], reading.sunDir[2]);
+    skyState.moonDir.set(reading.moonDir[0], reading.moonDir[1], reading.moonDir[2]);
 
-    if (ambient.current) ambient.current.intensity += (target.ambient * dim - ambient.current.intensity) * k;
-    if (hemi.current) hemi.current.intensity += (target.hemi * dim - hemi.current.intensity) * k;
+    const palette = skyPalette(reading.elevation);
+    const k = 1 - Math.exp(-delta * 2.2);
+    const dim = rain ? 0.58 : 1;
+
+    cache.sunPos.copy(skyState.sunDir).multiplyScalar(160);
+    cache.moonPos.copy(skyState.moonDir).multiplyScalar(160);
+    cache.temp.set(palette.sunColor);
+    cache.sunColor.lerp(cache.temp, k);
+    cache.temp.set(palette.horizon);
+    cache.hemiSky.lerp(cache.temp, k);
+    cache.temp.set(palette.ground);
+    cache.hemiGround.lerp(cache.temp, k);
+    cache.temp.set(palette.fog);
+    cache.fog.lerp(cache.temp, k);
+
     if (sun.current) {
-      sun.current.intensity += (target.sun * dim - sun.current.intensity) * k;
-      sun.current.color.lerp(new THREE.Color(target.sunColor), k);
-      sun.current.position.lerp(new THREE.Vector3(target.sunPosition[0], target.sunPosition[1], target.sunPosition[2]), k);
+      sun.current.position.copy(cache.sunPos);
+      sun.current.intensity += (palette.sunIntensity * dim - sun.current.intensity) * k;
+      sun.current.color.copy(cache.sunColor);
     }
-
-    colors.current.bg.lerp(new THREE.Color(target.bg), k);
-    colors.current.fog.lerp(new THREE.Color(target.fog), k);
-    colors.current.sun.lerp(new THREE.Color(target.sunColor), k);
-
+    if (moon.current) {
+      moon.current.position.copy(cache.moonPos);
+      moon.current.intensity += (palette.moonIntensity * dim - moon.current.intensity) * k;
+    }
+    if (ambient.current) {
+      ambient.current.intensity += (palette.ambient * dim - ambient.current.intensity) * k;
+    }
+    if (hemi.current) {
+      hemi.current.intensity += (palette.hemi * dim - hemi.current.intensity) * k;
+      hemi.current.color.copy(cache.hemiSky);
+      hemi.current.groundColor.copy(cache.hemiGround);
+    }
     if (scene.fog instanceof THREE.Fog) {
-      scene.fog.color.copy(colors.current.fog);
-      scene.fog.near += ((rain ? 70 : 120) - scene.fog.near) * k;
-      scene.fog.far += ((rain ? 230 : 340) - scene.fog.far) * k;
+      scene.fog.color.copy(cache.fog);
+      const nearTarget = rain ? 55 : 130;
+      const farTarget = rain ? 300 : 560;
+      scene.fog.near += (nearTarget - scene.fog.near) * k;
+      scene.fog.far += (farTarget - scene.fog.far) * k;
     }
+    gl.toneMappingExposure += (palette.exposure - gl.toneMappingExposure) * k;
   });
 
   return (
     <>
-      <ambientLight ref={ambient} intensity={PRESETS.day.ambient} />
-      <hemisphereLight ref={hemi} intensity={PRESETS.day.hemi} color="#dff0ff" groundColor="#7c8b68" />
+      <ambientLight ref={ambient} intensity={0.5} />
+      <hemisphereLight ref={hemi} intensity={0.5} color="#dce9f4" groundColor="#8b9581" />
       <directionalLight
         ref={sun}
-        intensity={PRESETS.day.sun}
-        color={PRESETS.day.sunColor}
-        position={PRESETS.day.sunPosition}
+        intensity={2.8}
+        color="#fff9ea"
+        position={[70, 110, 50]}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-left={-90}
-        shadow-camera-right={90}
-        shadow-camera-top={90}
-        shadow-camera-bottom={-90}
+        shadow-camera-left={-95}
+        shadow-camera-right={95}
+        shadow-camera-top={95}
+        shadow-camera-bottom={-95}
         shadow-camera-near={1}
-        shadow-camera-far={300}
-        shadow-bias={-0.0006}
+        shadow-camera-far={420}
+        shadow-bias={-0.0005}
+        shadow-normalBias={0.025}
       />
+      <directionalLight ref={moon} intensity={0} color="#9db5e6" position={[-60, 80, -50]} />
     </>
   );
 }
