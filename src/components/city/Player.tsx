@@ -18,7 +18,7 @@ const BOUNDS = {
 // Both spawn spots face into the space so the first step never walks into a wall.
 const SPAWN = {
   city: { x: 0, z: 18, yaw: Math.PI },
-  office: { x: 0, z: 7.1, yaw: Math.PI },
+  office: { x: 0, z: 6.2, yaw: Math.PI },
 };
 
 export default function Player() {
@@ -63,7 +63,7 @@ export default function Player() {
     if (view === 'office') {
       // Reveal the interior, then hand the camera back to the walk as soon as a stick moves.
       playerState.active = false;
-      useCityStore.getState().moveCamera([spawn.x + 4.4, 2.5, spawn.z + 5.4], [spawn.x, 1.25, spawn.z]);
+      useCityStore.getState().moveCamera([spawn.x + 3.2, 2.2, spawn.z + 1.4], [spawn.x, 1.2, spawn.z]);
     }
   }, [view]);
 
