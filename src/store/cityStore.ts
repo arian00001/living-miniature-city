@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { buildingById, cameraFor } from '../data/buildings';
-import { floorY } from '../data/office';
 import type { CameraPreset, LightingMode, Panel, WeatherMode } from '../types';
 import { dhakaMinutes } from '../lib/sun';
 
@@ -18,9 +17,9 @@ export interface ZoomRequest {
 const PRESETS: Record<CameraPreset, { position: [number, number, number]; target: [number, number, number] }> = {
   city: { position: [0, 96, 108], target: [0, 2, 0] },
   business: { position: [50, 38, 54], target: [8, 4, 0] },
-  headquarters: { position: [0, 18, 44], target: [0, 8, 0] },
+  headquarters: { position: [0, 20, 42], target: [0, 4, 0] },
   park: { position: [-16, 22, -28], target: [-16, 1, -52] },
-  office: { position: [0, 9, 30], target: [0, 5, 0] },
+  office: { position: [0, 22, 26], target: [0, 1, 0] },
 };
 
 let keyCounter = 0;
@@ -43,6 +42,8 @@ function modeFor(minutes: number): LightingMode {
 export interface CityStore {
   ready: boolean;
   entered: boolean;
+  cinematic: boolean;
+  tourKey: number;
   selectedBuildingId: string | null;
   activeView: 'city' | 'office';
   selectedFloor: number;
@@ -60,6 +61,8 @@ export interface CityStore {
 
   setReady: (value: boolean) => void;
   enterCity: () => void;
+  setCinematic: (value: boolean) => void;
+  restartTour: () => void;
   selectBuilding: (id: string) => void;
   clearSelection: () => void;
   setPanel: (panel: Panel) => void;
@@ -82,6 +85,8 @@ export interface CityStore {
 export const useCityStore = create<CityStore>((set, get) => ({
   ready: false,
   entered: false,
+  cinematic: false,
+  tourKey: 0,
   selectedBuildingId: null,
   activeView: 'city',
   selectedFloor: 1,
@@ -99,7 +104,12 @@ export const useCityStore = create<CityStore>((set, get) => ({
 
   setReady: (value) => set({ ready: value }),
 
-  enterCity: () => set({ entered: true, cameraRequest: { ...PRESETS.city, key: nextKey() } }),
+  // Entering starts the cinematic fly-through instead of dropping the visitor in a static view.
+  enterCity: () => set((state) => ({ entered: true, cinematic: true, tourKey: state.tourKey + 1 })),
+
+  setCinematic: (value) => set({ cinematic: value }),
+
+  restartTour: () => set((state) => ({ cinematic: true, tourKey: state.tourKey + 1, activeView: 'city' })),
 
   selectBuilding: (id) => {
     const building = buildingById(id);
@@ -109,6 +119,7 @@ export const useCityStore = create<CityStore>((set, get) => ({
       activeView: 'city',
       panel: 'building',
       preset: 'city',
+      cinematic: false,
       cameraRequest: {
         position: cameraFor(building.cameraTarget, building.cameraDistance),
         target: building.cameraTarget,
@@ -121,36 +132,28 @@ export const useCityStore = create<CityStore>((set, get) => ({
 
   setPanel: (panel) => set({ panel }),
 
-  enterOffice: () => {
-    const index = get().selectedFloor || 1;
+  enterOffice: () =>
     set({
       activeView: 'office',
       selectedBuildingId: 'headquarters',
-      panel: 'building',
-      selectedFloor: index,
-      cameraRequest: { position: [0, floorY(index) + 3.4, 26], target: [0, floorY(index), 0], key: nextKey() },
-    });
-  },
+      panel: null,
+      cinematic: false,
+      cameraRequest: { ...PRESETS.office, key: nextKey() },
+    }),
 
   exitOffice: () =>
-    set({ activeView: 'city', cameraRequest: { ...PRESETS.headquarters, key: nextKey() } }),
+    set({ activeView: 'city', cinematic: false, cameraRequest: { ...PRESETS.headquarters, key: nextKey() } }),
 
-  setFloor: (index) => {
-    if (index < 1 || index > 5) return;
-    set({
-      selectedFloor: index,
-      cameraRequest: { position: [0, floorY(index) + 3.4, 26], target: [0, floorY(index), 0], key: nextKey() },
-    });
-  },
+  setFloor: () => set({ selectedFloor: 1 }),
 
   focusPreset: (preset) => {
     const view = preset === 'office' ? 'office' : 'city';
-    set({ preset, activeView: view, cameraRequest: { ...PRESETS[preset], key: nextKey() } });
+    set({ preset, activeView: view, cinematic: false, cameraRequest: { ...PRESETS[preset], key: nextKey() } });
   },
 
-  moveCamera: (position, target) => set({ cameraRequest: { position, target, key: nextKey() } }),
+  moveCamera: (position, target) => set({ cinematic: false, cameraRequest: { position, target, key: nextKey() } }),
 
-  zoom: (factor) => set({ zoomRequest: { factor, key: nextKey() } }),
+  zoom: (factor) => set({ cinematic: false, zoomRequest: { factor, key: nextKey() } }),
 
   // Jumping a preset only moves the clock; the sky keeps following real time.
   setLighting: (mode) => {
@@ -162,7 +165,10 @@ export const useCityStore = create<CityStore>((set, get) => ({
   cycleLighting: () => {
     const order: LightingMode[] = ['day', 'sunset', 'night'];
     const current = order.indexOf(get().lightingMode);
-    set({ lightingMode: order[(current + 1) % order.length] });
+    const next = order[(current + 1) % order.length];
+    const target = next === 'day' ? 12 * 60 : next === 'sunset' ? 18 * 60 + 15 : 22 * 60;
+    minuteCursor = target;
+    set({ lightingMode: next, minutes: target });
   },
 
   toggleWeather: () => set({ weather: get().weather === 'rain' ? 'clear' : 'rain' }),
