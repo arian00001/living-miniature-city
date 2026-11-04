@@ -12,6 +12,7 @@ interface WorkerProps {
   hairStyle?: HairStyle;
   pose?: WorkerPose;
   typing?: boolean;
+  phase?: number;
 }
 
 export default function Worker({
@@ -23,6 +24,7 @@ export default function Worker({
   hairStyle = 'short',
   pose,
   typing = true,
+  phase = 0,
 }: WorkerProps) {
   return (
     <group position={position} rotation={[0, rotation, 0]}>
@@ -33,6 +35,7 @@ export default function Worker({
         hair={hair}
         hairStyle={hairStyle}
         trousers="#2d3644"
+        phase={phase}
       />
     </group>
   );
