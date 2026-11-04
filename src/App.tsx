@@ -4,7 +4,6 @@ import Hud from './components/ui/Hud';
 import CinematicEntry from './components/ui/CinematicEntry';
 import SceneBoundary from './components/ui/SceneBoundary';
 import Joystick from './components/ui/Joystick';
-import AdminPanel from './components/ui/AdminPanel';
 import ProjectsOverlay from './components/ui/ProjectsOverlay';
 import { useCityStore } from './store/cityStore';
 import { supportsWebGL } from './lib/webgl';
@@ -41,7 +40,6 @@ export default function App() {
       </SceneBoundary>
       {entered && activeView ? <Hud /> : null}
       {entered && activeView ? <Joystick /> : null}
-      {entered ? <AdminPanel /> : null}
       <ProjectsOverlay />
       <CinematicEntry />
     </div>
