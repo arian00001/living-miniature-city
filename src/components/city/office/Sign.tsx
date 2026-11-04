@@ -49,14 +49,14 @@ export default function Sign({
       ctx.textBaseline = 'middle';
       const mainSize = Math.round(h * (sub ? 0.4 : 0.5));
       ctx.font = '700 ' + mainSize + 'px Inter, Helvetica, Arial, sans-serif';
-      (ctx as unknown as { letterSpacing: string }).letterSpacing = Math.round(mainSize * 0.02) + 'px';
+      if ('letterSpacing' in ctx) ctx.letterSpacing = Math.round(mainSize * 0.02) + 'px';
       ctx.fillStyle = color;
       ctx.fillText(text, left, Math.round(h * (sub ? 0.4 : 0.52)));
 
       if (sub) {
         const subSize = Math.round(h * 0.135);
         ctx.font = '600 ' + subSize + 'px Inter, Helvetica, Arial, sans-serif';
-        (ctx as unknown as { letterSpacing: string }).letterSpacing = Math.round(subSize * 0.24) + 'px';
+        if ('letterSpacing' in ctx) ctx.letterSpacing = Math.round(subSize * 0.24) + 'px';
         ctx.fillStyle = accent;
         ctx.globalAlpha = 0.9;
         ctx.fillText(sub.toUpperCase(), left, Math.round(h * 0.73));
