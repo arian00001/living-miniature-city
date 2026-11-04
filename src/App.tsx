@@ -1,10 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import CityCanvas from './components/city/CityCanvas';
-import TopBar from './components/ui/TopBar';
-import SideNav from './components/ui/SideNav';
-import InfoPanel from './components/ui/InfoPanel';
-import BottomControls from './components/ui/BottomControls';
-import LoadingScreen from './components/ui/LoadingScreen';
+import Hud from './components/ui/Hud';
+import CinematicEntry from './components/ui/CinematicEntry';
 import { useCityStore } from './store/cityStore';
 import { supportsWebGL } from './lib/webgl';
 import { profile } from './data/profile';
@@ -12,41 +9,32 @@ import { projects } from './data/projects';
 
 export default function App() {
   const supported = useMemo(() => supportsWebGL(), []);
-  const cycleLighting = useCityStore((state) => state.cycleLighting);
+  const entered = useCityStore((state) => state.entered);
+  const activeView = useCityStore((state) => state.activeView);
   const clearSelection = useCityStore((state) => state.clearSelection);
-  const focusPreset = useCityStore((state) => state.focusPreset);
-  const toggleSimulation = useCityStore((state) => state.toggleSimulation);
+  const toggleOffice = useCityStore((state) => state.enterOffice);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
       if (event.key === 'Escape') clearSelection();
-      if (event.key.toLowerCase() === 'n') cycleLighting();
-      if (event.key.toLowerCase() === 'r') focusPreset('city');
-      if (event.key === ' ') {
-        event.preventDefault();
-        toggleSimulation();
+      if (event.key.toLowerCase() === 'o') {
+        if (useCityStore.getState().activeView === 'office') useCityStore.getState().exitOffice();
+        else toggleOffice();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [cycleLighting, clearSelection, focusPreset, toggleSimulation]);
+  }, [clearSelection, toggleOffice]);
 
   if (!supported) return <NoWebGL />;
 
   return (
     <div className="app">
       <CityCanvas />
-      <div className="ui">
-        <TopBar />
-        <div className="ui-mid">
-          <SideNav />
-          <InfoPanel />
-        </div>
-        <BottomControls />
-      </div>
-      <LoadingScreen />
+      {entered && activeView ? <Hud /> : null}
+      <CinematicEntry />
     </div>
   );
 }
@@ -57,7 +45,7 @@ function NoWebGL() {
       <div className="glass-card">
         <h1>This city needs WebGL</h1>
         <p>
-          Your browser could not start a WebGL context, so the 3D island cannot be rendered. Everything important is
+          Your browser could not start a WebGL context, so the 3D city cannot be rendered. Everything important is
           also available here as text.
         </p>
         <h2>{profile.name}</h2>
