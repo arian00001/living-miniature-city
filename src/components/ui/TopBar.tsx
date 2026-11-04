@@ -45,13 +45,13 @@ export default function TopBar() {
       </div>
 
       <div className="chip-row">
-        <span className="chip mono" title="Simulated city time">{formatClock(minutes)}</span>
+        <span className="chip mono" title="Live Asia/Dhaka time">{formatClock(minutes)} Dhaka</span>
         <button type="button" className="chip" onClick={toggleSimulation} title="Pause or resume the simulation">
           {simulationEnabled ? <Pause size={13} /> : <Play size={13} />}
           {simulationEnabled ? 'Live' : 'Paused'}
         </button>
         <button type="button" className={'chip' + (speed === 1 ? ' active' : '')} onClick={() => setSpeed(1)}>1x</button>
-        <button type="button" className={'chip' + (speed === 4 ? ' active' : '')} onClick={() => setSpeed(4)}>4x</button>
+        <button type="button" className={'chip' + (speed === 4 ? ' active' : '')} onClick={() => setSpeed(240)} title="Fast-forward the day">240×</button>
 
         <button type="button" className={'chip' + (lightingMode === 'day' ? ' active' : '')} onClick={() => setLighting('day')} title="Day">
           <Sun size={13} /> Day
