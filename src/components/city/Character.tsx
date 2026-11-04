@@ -274,9 +274,15 @@ export default function Character({
         <mesh position={[0, -0.03, 0]} castShadow material={trouserMat}>
           <capsuleGeometry args={[0.135, 0.13, 6, 14]} />
         </mesh>
+        <mesh position={[0, 0.022, 0]} rotation={[Math.PI / 2, 0, 0]} material={shoeMat}>
+          <torusGeometry args={[0.137, 0.011, 8, 24]} />
+        </mesh>
 
         <group ref={spine} position={[0, 0.05, 0]}>
           <mesh geometry={torsoGeometry} castShadow material={shirtMat} />
+          <mesh position={[0, 0.432, 0]} castShadow material={shirtMat}>
+            <cylinderGeometry args={[0.079, 0.068, 0.052, 16, 1, true]} />
+          </mesh>
           <mesh position={[0, 0.47, 0]} castShadow material={skinMat}>
             <cylinderGeometry args={[0.052, 0.062, 0.1, 12]} />
           </mesh>
@@ -288,6 +294,12 @@ export default function Character({
             </mesh>
             <mesh position={[0.044, 0.026, 0.108]} material={eyeMat}>
               <sphereGeometry args={[0.0145, 10, 8]} />
+            </mesh>
+            <mesh position={[-0.045, 0.062, 0.103]} material={hairMat}>
+              <boxGeometry args={[0.034, 0.009, 0.012]} />
+            </mesh>
+            <mesh position={[0.045, 0.062, 0.103]} material={hairMat}>
+              <boxGeometry args={[0.034, 0.009, 0.012]} />
             </mesh>
             <mesh position={[0, -0.062, 0.093]} material={lipMat}>
               <boxGeometry args={[0.05, 0.014, 0.014]} />
