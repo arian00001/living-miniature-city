@@ -1,4 +1,6 @@
 import Ground from './Ground';
+import SkyDome from './SkyDome';
+import DistantCity from './DistantCity';
 import Roads from './Roads';
 import Lighting from './Lighting';
 import Buildings from './Buildings';
@@ -17,7 +19,9 @@ export default function CityScene() {
       <SimulationClock />
       <Lighting />
       <group onPointerMissed={() => clearSelection()}>
+        <SkyDome />
         <Ground />
+        <DistantCity />
         <Roads />
         <Buildings />
         <Environment />
