@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { setPlayerInput } from '../../lib/player';
+import { useCityStore } from '../../store/cityStore';
 
 const RADIUS = 46;
 
@@ -7,6 +8,7 @@ export default function Joystick() {
   const pad = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
+  const activeView = useCityStore((state) => state.activeView);
 
   useEffect(() => () => setPlayerInput(0, 0), []);
 
@@ -36,9 +38,11 @@ export default function Joystick() {
       ref={pad}
       className="joy"
       role="button"
-      aria-label="Walk"
+      aria-label={activeView === 'office' ? 'Walk the office tour' : 'Walk'}
       onPointerDown={(event) => {
         dragging.current = true;
+        // The first pull on the stick walks you straight into the office tour.
+        if (useCityStore.getState().activeView !== 'office') useCityStore.getState().enterOffice();
         event.currentTarget.setPointerCapture(event.pointerId);
         track(event.clientX, event.clientY);
       }}
@@ -50,7 +54,7 @@ export default function Joystick() {
       onLostPointerCapture={release}
     >
       <div className="joy-knob" style={{ transform: 'translate3d(' + knob.x + 'px,' + knob.y + 'px,0)' }} />
-      <span className="joy-label">Walk</span>
+      <span className="joy-label">{activeView === 'office' ? 'Tour' : 'Walk'}</span>
     </div>
   );
 }
