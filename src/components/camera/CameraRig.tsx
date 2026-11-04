@@ -43,6 +43,9 @@ export default function CameraRig() {
     [],
   );
   const target = useMemo(() => new THREE.Vector3(), []);
+  const desiredCamera = useRef(new THREE.Vector3());
+  const lookAt = useRef(new THREE.Vector3());
+  const UP = useMemo(() => new THREE.Vector3(0, 1, 0), []);
 
   // The tour owns the camera, so any deliberate drag on the scene hands control back.
   useEffect(() => {
@@ -136,17 +139,33 @@ export default function CameraRig() {
       start(center.clone().add(offset), center);
     }
 
-    // Once the visitor starts walking, the orbit target rides along with the character so
-    // the whole city stays draggable while following the walk.
-    if (playerState.active && !flight.current && useCityStore.getState().activeView === 'city') {
-      const k = Math.min(1, delta * 3.4);
-      const shiftX = (playerState.x - ctrl.target.x) * k;
-      const shiftZ = (playerState.z - ctrl.target.z) * k;
-      camera.position.x += shiftX;
-      camera.position.z += shiftZ;
-      ctrl.target.x += shiftX;
-      ctrl.target.z += shiftZ;
+    // Cinematic third person: while walking, the camera trails behind the character and lets the
+    // buildings pan past the lens; standing still it drifts in a slow orbit to show the skyline.
+    if (playerState.active && !flight.current) {
+      const indoor = useCityStore.getState().activeView === 'office';
+      const forwardX = Math.sin(playerState.yaw);
+      const forwardZ = Math.cos(playerState.yaw);
+
+      if (playerState.walking) {
+        ctrl.enabled = false;
+        const back = indoor ? 3.1 : 5.4;
+        const height = indoor ? 1.95 : 2.65;
+        desiredCamera.current.set(playerState.x - forwardX * back, height, playerState.z - forwardZ * back);
+        camera.position.lerp(desiredCamera.current, Math.min(1, delta * 3.6));
+        lookAt.current.set(playerState.x + forwardX * 2.6, 1.34, playerState.z + forwardZ * 2.6);
+        ctrl.target.lerp(lookAt.current, Math.min(1, delta * 5));
+        camera.lookAt(ctrl.target);
+        return;
+      }
+
+      ctrl.enabled = true;
+      lookAt.current.set(playerState.x, indoor ? 1.25 : 1.3, playerState.z);
+      ctrl.target.lerp(lookAt.current, Math.min(1, delta * 3.2));
+      const orbit = delta * (indoor ? 0.05 : 0.15);
+      camera.position.sub(ctrl.target).applyAxisAngle(UP, orbit).add(ctrl.target);
+      camera.position.y = THREE.MathUtils.clamp(camera.position.y, 1.6, indoor ? 2.9 : 32);
       ctrl.update();
+      return;
     }
 
     const activeFlight = flight.current;
