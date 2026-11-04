@@ -4,27 +4,21 @@ import { useFrame, useThree } from '@react-three/fiber';
 import Character from './Character';
 import { playerInput, playerState } from '../../lib/player';
 import { useCityStore } from '../../store/cityStore';
+import { OFFICE_ROUTE, pointOnRoute, routeLength } from '../../data/officeRoute';
 
 const CITY_SPEED = 3.6;
-const OFFICE_SPEED = 2.4;
-const TURN_RATE = 10;
+const TOUR_SPEED = 1.7;
+const TURN_RATE = 9;
 const UP = new THREE.Vector3(0, 1, 0);
-
-const BOUNDS = {
-  city: { x: 70, z: 70 },
-  office: { x: 12.1, z: 7.9 },
-};
-
-// Both spawn spots face into the space so the first step never walks into a wall.
-const SPAWN = {
-  city: { x: 0, z: 18, yaw: Math.PI },
-  office: { x: 0, z: 6.2, yaw: Math.PI },
-};
+const BOUNDS = { x: 70, z: 70 };
+const SPAWN = { x: 0, z: 18, yaw: Math.PI };
+const ROUTE_TOTAL = routeLength(OFFICE_ROUTE);
 
 export default function Player() {
   const group = useRef<THREE.Group>(null);
   const keys = useRef<Record<string, boolean>>({});
   const stride = useRef({ d: 0 });
+  const tour = useRef(0);
   const [pose, setPose] = useState<'idle' | 'walk'>('idle');
   const camera = useThree((state) => state.camera);
   const forward = useRef(new THREE.Vector3());
@@ -47,24 +41,34 @@ export default function Player() {
     };
   }, []);
 
-  // Switching between the city and the office moves the character to the matching spawn.
+  // Office visits always start at the door, on the first step of the fixed tour.
   useEffect(() => {
-    const spawn = SPAWN[view];
     const node = group.current;
-    if (node) {
-      node.position.set(spawn.x, 0, spawn.z);
-      node.rotation.y = spawn.yaw;
-    }
-    playerState.x = spawn.x;
-    playerState.z = spawn.z;
-    playerState.yaw = spawn.yaw;
+    playerState.active = false;
     playerState.walking = false;
     stride.current.d = 0;
+
     if (view === 'office') {
-      // Reveal the interior, then hand the camera back to the walk as soon as a stick moves.
-      playerState.active = false;
-      useCityStore.getState().moveCamera([spawn.x + 3.2, 2.2, spawn.z + 1.4], [spawn.x, 1.2, spawn.z]);
+      tour.current = 0;
+      const start = pointOnRoute(OFFICE_ROUTE, 0);
+      if (node) {
+        node.position.set(start.x, 0, start.z);
+        node.rotation.y = start.yaw;
+      }
+      playerState.x = start.x;
+      playerState.z = start.z;
+      playerState.yaw = start.yaw;
+      useCityStore.getState().moveCamera([start.x + 2.8, 2.15, start.z + 1.6], [start.x, 1.2, start.z]);
+      return;
     }
+
+    if (node) {
+      node.position.set(SPAWN.x, 0, SPAWN.z);
+      node.rotation.y = SPAWN.yaw;
+    }
+    playerState.x = SPAWN.x;
+    playerState.z = SPAWN.z;
+    playerState.yaw = SPAWN.yaw;
   }, [view]);
 
   useFrame((_, delta) => {
@@ -74,17 +78,42 @@ export default function Player() {
     const pressed = keys.current;
     const keyboardX = (pressed.d || pressed.arrowright ? 1 : 0) - (pressed.a || pressed.arrowleft ? 1 : 0);
     const keyboardY = (pressed.w || pressed.arrowup ? 1 : 0) - (pressed.s || pressed.arrowdown ? 1 : 0);
-    let ix = playerInput.x + keyboardX;
-    let iy = playerInput.y + keyboardY;
+    const ix = playerInput.x + keyboardX;
+    const iy = playerInput.y + keyboardY;
     const magnitude = Math.hypot(ix, iy);
     const walking = magnitude > 0.12;
-    const indoor = view === 'office';
-    const bounds = indoor ? BOUNDS.office : BOUNDS.city;
-    const speed = indoor ? OFFICE_SPEED : CITY_SPEED;
+
+    if (view === 'office') {
+      // Inside the office the joystick drives a fixed route: door → reception →
+      // project room → boss room. Pulling down walks back along it.
+      if (walking) {
+        const push = Math.abs(iy) > 0.15 ? Math.sign(iy) : 1;
+        tour.current = Math.min(ROUTE_TOTAL, Math.max(0, tour.current + push * TOUR_SPEED * delta));
+        stride.current.d += TOUR_SPEED * delta;
+      }
+      const point = pointOnRoute(OFFICE_ROUTE, tour.current);
+      node.position.set(point.x, 0, point.z);
+
+      let diff = point.yaw - node.rotation.y;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      node.rotation.y += diff * Math.min(1, delta * TURN_RATE);
+
+      playerState.x = point.x;
+      playerState.z = point.z;
+      playerState.yaw = node.rotation.y;
+      playerState.walking = walking;
+      playerState.active = walking;
+      setPose((current) => {
+        const next = walking ? 'walk' : 'idle';
+        return current === next ? current : next;
+      });
+      return;
+    }
 
     if (walking) {
-      ix /= Math.max(1, magnitude);
-      iy /= Math.max(1, magnitude);
+      const nx = ix / Math.max(1, magnitude);
+      const ny = iy / Math.max(1, magnitude);
 
       camera.getWorldDirection(forward.current);
       forward.current.y = 0;
@@ -94,20 +123,20 @@ export default function Player() {
 
       move.current
         .copy(forward.current)
-        .multiplyScalar(iy)
-        .addScaledVector(right.current, ix)
+        .multiplyScalar(ny)
+        .addScaledVector(right.current, nx)
         .normalize();
 
-      const step = speed * delta;
-      node.position.x = THREE.MathUtils.clamp(node.position.x + move.current.x * step, -bounds.x, bounds.x);
-      node.position.z = THREE.MathUtils.clamp(node.position.z + move.current.z * step, -bounds.z, bounds.z);
+      const step = CITY_SPEED * delta;
+      node.position.x = THREE.MathUtils.clamp(node.position.x + move.current.x * step, -BOUNDS.x, BOUNDS.x);
+      node.position.z = THREE.MathUtils.clamp(node.position.z + move.current.z * step, -BOUNDS.z, BOUNDS.z);
       stride.current.d += step;
 
       const targetYaw = Math.atan2(move.current.x, move.current.z);
       let diff = targetYaw - node.rotation.y;
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
-      node.rotation.y += diff * Math.min(1, delta * TURN_RATE);
+      node.rotation.y += diff * Math.min(1, delta * 10);
 
       playerState.yaw = node.rotation.y;
       playerState.active = true;
