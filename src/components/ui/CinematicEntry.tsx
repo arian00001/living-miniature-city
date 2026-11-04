@@ -22,7 +22,7 @@ export default function CinematicEntry() {
   const ready = useCityStore((state) => state.ready);
   const entered = useCityStore((state) => state.entered);
   const enterCity = useCityStore((state) => state.enterCity);
-  const [phase, setPhase] = useState<'loading' | 'closing' | 'gone'>('loading');
+  const [phase, setPhase] = useState<'loading' | 'closing' | 'reveal' | 'gone'>('loading');
   const [tick, setTick] = useState(6);
 
   useEffect(() => {
@@ -35,10 +35,19 @@ export default function CinematicEntry() {
 
   useEffect(() => {
     if (phase !== 'closing') return;
-    const timer = window.setTimeout(() => setPhase('gone'), 720);
+    const timer = window.setTimeout(() => setPhase('reveal'), 640);
     return () => window.clearTimeout(timer);
   }, [phase]);
 
+  // The card is gone but the frame stays dark for a beat: the city then fades up
+  // through it while the camera is still gliding in.
+  useEffect(() => {
+    if (phase !== 'reveal') return;
+    const timer = window.setTimeout(() => setPhase('gone'), 1760);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  if (phase === 'reveal') return <div className="scene-veil" aria-hidden="true" />;
   if (phase === 'gone') return null;
   const progress = ready ? 100 : Math.min(92, Math.round(tick));
 

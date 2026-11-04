@@ -38,6 +38,7 @@ export default function App() {
       <SceneBoundary>
         <CityCanvas />
       </SceneBoundary>
+      {entered ? <div className="scene-vignette" aria-hidden="true" /> : null}
       {entered && activeView ? <Hud /> : null}
       {entered && activeView ? <Joystick /> : null}
       <ProjectsOverlay />

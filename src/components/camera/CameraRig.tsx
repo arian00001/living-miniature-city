@@ -9,6 +9,13 @@ import { playerState } from '../../lib/player';
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const smooth = (t: number) => t * t * (3 - 2 * t);
 
+interface Approach {
+  fromPosition: THREE.Vector3;
+  fromTarget: THREE.Vector3;
+  fromFov: number;
+  t: number;
+}
+
 interface Flight {
   fromPosition: THREE.Vector3;
   toPosition: THREE.Vector3;
@@ -22,6 +29,7 @@ export default function CameraRig() {
   const gl = useThree((state) => state.gl);
   const controls = useRef<any>(null);
   const flight = useRef<Flight | null>(null);
+  const approach = useRef<Approach | null>(null);
   const handledCamera = useRef(0);
   const handledZoom = useRef(0);
   const handledTour = useRef(-1);
@@ -72,13 +80,16 @@ export default function CameraRig() {
     shotIndex.current = 0;
     shotProgress.current = 0;
     flight.current = null;
+    approach.current = null;
     if (cinematic) {
-      camera.position.copy(vectors[0].from);
-      target.copy(vectors[0].lookFrom);
-      camera.lookAt(target);
-      camera.fov = cineShots[0].fovFrom;
-      camera.updateProjectionMatrix();
-      if (controls.current) controls.current.target.copy(target);
+      // Glide from wherever the camera sits into the opening shot, so entering the city
+      // reads as one continuous camera move instead of a hard cut.
+      approach.current = {
+        fromPosition: camera.position.clone(),
+        fromTarget: controls.current ? controls.current.target.clone() : target.clone(),
+        fromFov: camera.fov,
+        t: 0,
+      };
     }
   }, [tourKey, cinematic, camera, vectors, target]);
 
@@ -88,6 +99,21 @@ export default function CameraRig() {
 
     if (cinematic) {
       ctrl.enabled = false;
+
+      const glide = approach.current;
+      if (glide) {
+        glide.t = Math.min(1, glide.t + delta / 3.4);
+        const g = ease(glide.t);
+        camera.position.lerpVectors(glide.fromPosition, vectors[0].from, g);
+        target.lerpVectors(glide.fromTarget, vectors[0].lookFrom, g);
+        camera.lookAt(target);
+        camera.fov = glide.fromFov + (cineShots[0].fovFrom - glide.fromFov) * g;
+        camera.updateProjectionMatrix();
+        ctrl.target.copy(target);
+        if (glide.t >= 1) approach.current = null;
+        return;
+      }
+
       const shot = cineShots[shotIndex.current];
       shotProgress.current += delta / shot.duration;
       if (shotProgress.current >= 1) {

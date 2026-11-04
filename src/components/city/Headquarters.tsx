@@ -1,4 +1,5 @@
 import OfficeInterior from './office/OfficeInterior';
+import GlassNameBox from './GlassNameBox';
 import Sign from './office/Sign';
 
 const WALL = '#f5f5f5';
@@ -257,6 +258,9 @@ export default function Headquarters() {
         </mesh>
         <Sign text="DevStyle Tech" position={[0, 1.6, 0]} width={4.2} height={1.1} />
       </group>
+
+      {/* the studio name, floating in a glass case above the office */}
+      <GlassNameBox name="DevStyle Tech" sub="Headquarters" position={[0, 7.1, 0]} />
 
       <group position={[0, 0.6, 0]}>
         <OfficeInterior />
