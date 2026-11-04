@@ -148,13 +148,13 @@ export default function Headquarters() {
 
       {/* lawn strips between the fence and the building */}
       {[
-        [-18.2, 0.02, 0, 3.4, 1, 33.4],
-        [18.2, 0.02, 0, 3.4, 1, 33.4],
-        [0, 0.02, 14.4, 33.4, 1, 5],
-        [0, 0.02, -14.4, 33.4, 1, 4.6],
-      ].map(([x, y, z, w, d1, d2], index) => (
-        <mesh key={'lawn' + index} position={[x as number, 0.5 + (y as number), z as number]} receiveShadow>
-          <boxGeometry args={[w as number, 0.06, d2 as number]} />
+        { x: -18.2, z: 0, w: 3.4, d: 33.4 },
+        { x: 18.2, z: 0, w: 3.4, d: 33.4 },
+        { x: 0, z: 14.4, w: 33.4, d: 5 },
+        { x: 0, z: -14.4, w: 33.4, d: 4.6 },
+      ].map((patch, index) => (
+        <mesh key={'lawn' + index} position={[patch.x, 0.52, patch.z]} receiveShadow>
+          <boxGeometry args={[patch.w, 0.06, patch.d]} />
           <meshStandardMaterial color={LAWN} roughness={1} />
         </mesh>
       ))}
