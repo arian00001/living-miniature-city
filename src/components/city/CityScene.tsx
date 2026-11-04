@@ -6,6 +6,7 @@ import Lighting from './Lighting';
 import Buildings from './Buildings';
 import Environment from './Environment';
 import Humans from './Humans';
+import Gardeners from './Gardeners';
 import Vehicles from './Vehicles';
 import Plane from './Plane';
 import Player from './Player';
@@ -32,6 +33,7 @@ export default function CityScene() {
         <Player />
         <TrafficLights />
         <Humans />
+        <Gardeners />
         <Rain />
       </group>
     </>
