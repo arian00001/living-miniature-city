@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { seeded } from '../../lib/paths';
+import { useCityStore } from '../../store/cityStore';
 
 function StreetTree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
   return (
@@ -25,66 +26,65 @@ function Lamp({ position, lit }: { position: [number, number, number]; lit: bool
       </mesh>
       <mesh position={[0, 3.3, 0]}>
         <sphereGeometry args={[0.26, 12, 10]} />
-        <meshStandardMaterial
-          color="#fff3cf"
-          emissive="#ffdf9c"
-          emissiveIntensity={lit ? 2.2 : 0.15}
-        />
+        <meshStandardMaterial color="#fff3cf" emissive="#ffdf9c" emissiveIntensity={lit ? 2.2 : 0.15} />
       </mesh>
     </group>
   );
 }
 
+const LAMP_SPOTS: [number, number, number][] = [
+  [-16, 0, -20],
+  [16, 0, -20],
+  [-16, 0, 20],
+  [16, 0, 20],
+  [-44, 0, -20],
+  [44, 0, -20],
+  [-44, 0, 20],
+  [44, 0, 20],
+  [-20, 0, -44],
+  [20, 0, -44],
+  [-20, 0, 44],
+  [20, 0, 44],
+];
+
 export default function Environment() {
   const random = useMemo(() => seeded(133), []);
-  const lit = useCityStoreLamp();
+  const lit = useCityStore((state) => state.lightingMode !== 'day');
 
   const trees = useMemo(() => {
     const spots: { position: [number, number, number]; scale: number }[] = [];
     const lanes: [number, number, number, number][] = [
-      [-58, -58, 58, -46],
-      [-58, 46, 58, 58],
-      [-58, -46, -46, 46],
-      [46, -46, 58, 46],
+      [-58, -58, 58, -47],
+      [-58, 47, 58, 58],
+      [-58, -46, -47, 46],
+      [47, -46, 58, 46],
     ];
     lanes.forEach(([x1, z1, x2, z2]) => {
       for (let i = 0; i < 7; i += 1) {
-        const x = x1 + (x2 - x1) * (i / 6) + (random() - 0.5) * 3;
-        const z = z1 + (z2 - z1) * (i / 6) + (random() - 0.5) * 3;
-        spots.push({ position: [x, 0, z], scale: 0.6 + random() * 0.45 });
+        spots.push({
+          position: [
+            x1 + (x2 - x1) * (i / 6) + (random() - 0.5) * 2.5,
+            0,
+            z1 + (z2 - z1) * (i / 6) + (random() - 0.5) * 2.5,
+          ],
+          scale: 0.6 + random() * 0.45,
+        });
       }
     });
     return spots;
   }, [random]);
 
   const flowers = useMemo(() => {
-    const spots: { position: [number, number, number]; color: string }[] = [];
     const tones = ['#e6c14f', '#d97a8a', '#c9d6f0', '#e8e0c0'];
-    for (let i = 0; i < 46; i += 1) {
+    return Array.from({ length: 46 }, () => {
       const angle = random() * Math.PI * 2;
       const radius = 18 + random() * 30;
-      spots.push({
-        position: [Math.cos(angle) * radius, 0.14, Math.sin(angle) * radius],
+      return {
+        position: [Math.cos(angle) * radius, 0.14, Math.sin(angle) * radius] as [number, number, number],
         color: tones[Math.floor(random() * tones.length)],
-      });
-    }
-    return spots;
+      };
+    });
   }, [random]);
-
-  const lamps: [number, number, number][] = [
-    [-16, 0, -20],
-    [16, 0, -20],
-    [-16, 0, 20],
-    [16, 0, 20],
-    [-44, 0, -20],
-    [44, 0, -20],
-    [-44, 0, 20],
-    [44, 0, 20],
-    [-20, 0, -44],
-    [20, 0, -44],
-    [-20, 0, 44],
-    [20, 0, 44],
-  ];
 
   return (
     <group>
@@ -97,24 +97,19 @@ export default function Environment() {
           <meshStandardMaterial color={flower.color} roughness={0.9} />
         </mesh>
       ))}
-      {lamps.map((position, index) => (
+      {LAMP_SPOTS.map((position, index) => (
         <Lamp key={index} position={position} lit={lit} />
       ))}
-      {/* parking bays on the south edge */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[10, 0.05, 52]} receiveShadow>
+        <planeGeometry args={[14, 7]} />
+        <meshStandardMaterial color="#3a3f47" roughness={0.95} />
+      </mesh>
       {[-6, -2, 2, 6].map((x) => (
         <mesh key={x} rotation={[-Math.PI / 2, 0, 0]} position={[10 + x, 0.09, 52]}>
           <planeGeometry args={[0.3, 6]} />
           <meshStandardMaterial color="#e7e2d4" roughness={0.9} />
         </mesh>
       ))}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[10, 0.05, 52]} receiveShadow>
-        <planeGeometry args={[14, 7]} />
-        <meshStandardMaterial color="#3a3f47" roughness={0.95} />
-      </mesh>
     </group>
   );
-}
-
-function useCityStoreLamp() {
-  return false;
 }
