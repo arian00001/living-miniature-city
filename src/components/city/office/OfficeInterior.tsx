@@ -5,6 +5,7 @@ import Sign from './Sign';
 import Worker from './Worker';
 import Scientist from './Scientist';
 import Robot from './Robot';
+import Lab from './Lab';
 
 const SHIRTS = ['#3f6fd8', '#3fb6c9', '#8f5bd8', '#d8623f', '#4f9d6b', '#c9a03c'];
 
@@ -41,6 +42,9 @@ export default function OfficeInterior() {
       ))}
 
       <GlassPartition position={[-0.1, 0, -1.8]} rotation={Math.PI / 2} width={9.4} height={2.3} />
+
+      {/* the research bench, where the scientists work the machines */}
+      <Lab />
 
       {/* reception, with the company board facing the door */}
       <group>
