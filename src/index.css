@@ -305,3 +305,50 @@ body {
   .entry-card { animation: none; }
   .entry { transition: none; }
 }
+
+/* -------------------------------------------------------------- joystick */
+
+.joy {
+  position: fixed;
+  left: 18px;
+  bottom: 26px;
+  z-index: 14;
+  display: grid;
+  place-items: center;
+  width: 116px;
+  height: 116px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: radial-gradient(circle at 34% 26%, #ffffff 0%, #f3fae6 58%, #e8f4d4 100%);
+  box-shadow: 0 22px 44px -26px rgba(60, 88, 18, 0.5), inset 0 1px 0 #ffffff;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.joy:active { cursor: grabbing; }
+
+.joy-knob {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: linear-gradient(150deg, #dcf79f, #8ed21f);
+  border: 1px solid rgba(77, 124, 15, 0.34);
+  box-shadow: 0 12px 22px -12px rgba(77, 124, 15, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition: transform 90ms linear;
+}
+
+.joy-label {
+  position: absolute;
+  bottom: -17px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(60, 78, 48, 0.68);
+}
+
+@media (max-width: 560px) {
+  .joy { width: 100px; height: 100px; left: 14px; bottom: 20px; }
+  .joy-knob { width: 40px; height: 40px; }
+}
