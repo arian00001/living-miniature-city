@@ -7,6 +7,8 @@ import Buildings from './Buildings';
 import Environment from './Environment';
 import Humans from './Humans';
 import Vehicles from './Vehicles';
+import Plane from './Plane';
+import Player from './Player';
 import TrafficLights from './TrafficLights';
 import Rain from './Rain';
 import SimulationClock from './SimulationClock';
@@ -26,6 +28,8 @@ export default function CityScene() {
         <Buildings />
         <Environment />
         <Vehicles />
+        <Plane />
+        <Player />
         <TrafficLights />
         <Humans />
         <Rain />
