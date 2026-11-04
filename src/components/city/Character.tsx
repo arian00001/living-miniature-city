@@ -18,6 +18,8 @@ export interface CharacterProps {
   speed?: number;
   /** Travelled distance in metres, shared with the walking code so feet never slide. */
   distanceRef?: { d: number };
+  /** Offsets the idle cycle so co-workers never move in lockstep. */
+  phase?: number;
 }
 
 const MATERIALS = new Map<string, THREE.MeshStandardMaterial>();
@@ -45,6 +47,7 @@ export default function Character({
   scale = 1,
   speed = 1.3,
   distanceRef,
+  phase = 0,
 }: CharacterProps) {
   const hips = useRef<THREE.Group>(null);
   const spine = useRef<THREE.Group>(null);
@@ -126,7 +129,7 @@ export default function Character({
   }, [hairStyle]);
 
   useFrame((state, delta) => {
-    const time = state.clock.elapsedTime;
+    const time = state.clock.elapsedTime + phase;
     let distance = 0;
     if (pose === 'walk' || pose === 'run') {
       if (distanceRef) distance = distanceRef.d;
