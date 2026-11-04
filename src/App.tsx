@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import CityCanvas from './components/city/CityCanvas';
 import Hud from './components/ui/Hud';
 import CinematicEntry from './components/ui/CinematicEntry';
+import SceneBoundary from './components/ui/SceneBoundary';
 import { useCityStore } from './store/cityStore';
 import { supportsWebGL } from './lib/webgl';
 import { profile } from './data/profile';
@@ -32,7 +33,9 @@ export default function App() {
 
   return (
     <div className="app">
-      <CityCanvas />
+      <SceneBoundary>
+        <CityCanvas />
+      </SceneBoundary>
       {entered && activeView ? <Hud /> : null}
       <CinematicEntry />
     </div>
