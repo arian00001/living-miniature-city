@@ -1,14 +1,14 @@
 import type { Profile } from '../types';
 
-// SAMPLE CONTENT — replace every field with your real details.
+// Pulled from arian00001.site — Dev Ayan (Arian, arian00001).
 export const profile: Profile = {
-  name: 'Your Name',
-  title: 'Full-stack developer',
-  bio: 'This is sample portfolio copy. Swap it for your own story: what you build, how you work, and what you care about in software.',
+  name: 'Dev Ayan',
+  title: 'Creative Developer & Designer',
+  bio: 'Official portfolio of Dev Ayan. Building modern AI-powered websites, mobile apps, premium UI/UX and innovative digital experiences — web, 3D, motion design and UI engineering.',
   location: 'Dhaka, Bangladesh',
-  email: 'hello@example.com',
+  email: '',
   socials: [
-    { label: 'GitHub', url: 'https://github.com' },
-    { label: 'LinkedIn', url: 'https://linkedin.com' },
+    { label: 'arian00001.site', url: 'https://arian00001.site' },
+    { label: 'GitHub', url: 'https://github.com/arian00001' },
   ],
 };
