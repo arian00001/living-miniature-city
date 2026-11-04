@@ -38,7 +38,7 @@ export default function App() {
         <CityCanvas />
       </SceneBoundary>
       {entered && activeView ? <Hud /> : null}
-      {entered && activeView === 'city' ? <Joystick /> : null}
+      {entered && activeView ? <Joystick /> : null}
       <CinematicEntry />
     </div>
   );
