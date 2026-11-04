@@ -3,6 +3,8 @@ import { isWorkingHours } from '../../../data/office';
 import { Chair, CoffeeTable, Desk, GlassPartition, Plant, ReceptionDesk, Sofa, Whiteboard } from './Furniture';
 import Sign from './Sign';
 import Worker from './Worker';
+import Scientist from './Scientist';
+import Robot from './Robot';
 
 const SHIRTS = ['#3f6fd8', '#3fb6c9', '#8f5bd8', '#d8623f', '#4f9d6b', '#c9a03c'];
 
@@ -44,7 +46,7 @@ export default function OfficeInterior() {
       <group>
         <Sign text="DevStyle Tech" sub="Innovate · Create · Grow" position={[-8.4, 2.5, 1.6]} width={4.6} height={1.15} />
         <ReceptionDesk position={[-8.4, 0, 3.3]} />
-        <Worker position={[-8.4, 0, 2.3]} pose="talk" shirt="#2e7d32" skin="#d8a87c" />
+        <Scientist position={[-8.4, 0, 2.4]} rotation={0} />
         <Worker position={[-8.4, 0, 5.7]} rotation={Math.PI} pose="idle" shirt="#c4553f" skin="#c98f63" hairStyle="short" />
         <Plant position={[-12.1, 0, 6.9]} scale={1.15} />
         <Plant position={[-12.1, 0, 0.4]} />
@@ -80,6 +82,9 @@ export default function OfficeInterior() {
       <Plant position={[0.8, 0, 7.7]} />
       <Plant position={[-4.8, 0, -7.7]} scale={0.9} tone="#356e31" />
       <Plant position={[0.8, 0, -7.7]} scale={0.9} />
+
+      {/* the robot greets people as they come through the door */}
+      <Robot position={[3.3, 0, 6.5]} size={1.8} />
 
       {/* interior fill so the open plan reads at night */}
       <pointLight position={[0, 3, 0]} color="#fff3dd" intensity={9} distance={18} decay={2} />
