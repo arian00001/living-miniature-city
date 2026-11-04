@@ -136,7 +136,7 @@ function Gardens() {
 }
 
 export default function Headquarters() {
-  const mullions = [-10.4, -6.9, -3.4, 0, 3.4, 6.9, 10.4];
+  const mullions = [-6, -3, 0, 3, 6];
 
   return (
     <group>
@@ -212,21 +212,21 @@ export default function Headquarters() {
       ))}
 
       {/* glazed shopfront with black mullions */}
-      <mesh position={[0, 2.1, 9.05]}>
-        <boxGeometry args={[20.4, 2.9, 0.06]} />
+      <mesh position={[0, 2.1, 9.13]}>
+        <boxGeometry args={[13, 2.9, 0.06]} />
         <meshStandardMaterial color="#d7e6ee" roughness={0.08} metalness={0.25} transparent opacity={0.34} />
       </mesh>
       {mullions.map((x) => (
-        <mesh key={'mullion' + x} position={[x, 2.1, 9.08]} castShadow>
+        <mesh key={'mullion' + x} position={[x, 2.1, 9.16]} castShadow>
           <boxGeometry args={[0.12, 2.9, 0.16]} />
           <meshStandardMaterial color={FRAME} metalness={0.55} roughness={0.4} />
         </mesh>
       ))}
-      <mesh position={[0, 2.1, 9.11]} castShadow>
+      <mesh position={[0, 2.1, 9.19]} castShadow>
         <boxGeometry args={[2.4, 2.7, 0.1]} />
         <meshStandardMaterial color={FRAME} metalness={0.55} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 2.05, 9.14]}>
+      <mesh position={[0, 2.05, 9.23]}>
         <boxGeometry args={[2.1, 2.5, 0.05]} />
         <meshStandardMaterial color="#e4f1f6" roughness={0.06} metalness={0.3} transparent opacity={0.4} />
       </mesh>
