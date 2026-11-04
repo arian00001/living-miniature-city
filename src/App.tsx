@@ -3,6 +3,7 @@ import CityCanvas from './components/city/CityCanvas';
 import Hud from './components/ui/Hud';
 import CinematicEntry from './components/ui/CinematicEntry';
 import SceneBoundary from './components/ui/SceneBoundary';
+import Joystick from './components/ui/Joystick';
 import { useCityStore } from './store/cityStore';
 import { supportsWebGL } from './lib/webgl';
 import { profile } from './data/profile';
@@ -37,6 +38,7 @@ export default function App() {
         <CityCanvas />
       </SceneBoundary>
       {entered && activeView ? <Hud /> : null}
+      {entered && activeView === 'city' ? <Joystick /> : null}
       <CinematicEntry />
     </div>
   );
