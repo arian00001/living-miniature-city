@@ -4,11 +4,13 @@ import { useFrame } from '@react-three/fiber';
 import { pointOnLoop, rectLoop, seeded } from '../../lib/paths';
 import Character, { type HairStyle } from './Character';
 
+// Every loop runs on the pavement beside a road, so nobody ever walks through a wall.
 const PATHS = [
-  rectLoop(0, 0, 13.2, 13.2),
-  rectLoop(30, -30, 13.4, 13.4),
-  rectLoop(-30, 30, 13, 13),
-  rectLoop(30, 30, 11.5, 11.5),
+  rectLoop(0, 0, 20.1, 20.1),
+  rectLoop(30, -30, 9.9, 9.9),
+  rectLoop(-30, 30, 9.9, 9.9),
+  rectLoop(30, 30, 9.9, 9.9),
+  rectLoop(-30, -30, 9.9, 9.9),
   rectLoop(-16, -52, 11.5, 5),
 ];
 
@@ -38,7 +40,7 @@ function Pedestrian({ walker }: { walker: Walker }) {
     distance.current.d += walker.speed * delta;
     const point = pointOnLoop(PATHS[walker.pathIndex], distance.current.d);
     if (root.current) {
-      root.current.position.set(point.x, 0.04, point.z);
+      root.current.position.set(point.x, 0.12, point.z);
       root.current.rotation.y = point.angle;
     }
   });
@@ -79,9 +81,9 @@ export default function Humans() {
 
   const groups = useMemo(
     () => [
-      { position: [-22, 0.04, -46] as [number, number, number], rotation: 0.5, shirt: '#3f8f62', skin: SKINS[1], hair: HAIRS[0], pose: 'talk' as const },
-      { position: [-19.4, 0.04, -46.4] as [number, number, number], rotation: -2.4, shirt: '#e0e2e6', skin: SKINS[3], hair: HAIRS[2], pose: 'talk' as const },
-      { position: [12, 0.04, -46] as [number, number, number], rotation: 2.1, shirt: '#c4553f', skin: SKINS[0], hair: HAIRS[1], pose: 'idle' as const },
+      { position: [-22, 0.12, -46] as [number, number, number], rotation: 0.5, shirt: '#3f8f62', skin: SKINS[1], hair: HAIRS[0], pose: 'talk' as const },
+      { position: [-19.4, 0.12, -46.4] as [number, number, number], rotation: -2.4, shirt: '#e0e2e6', skin: SKINS[3], hair: HAIRS[2], pose: 'talk' as const },
+      { position: [12, 0.12, -46] as [number, number, number], rotation: 2.1, shirt: '#c4553f', skin: SKINS[0], hair: HAIRS[1], pose: 'idle' as const },
     ],
     [],
   );
